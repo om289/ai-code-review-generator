@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="AI-powered code review comment generator. Paste a diff and get structured review findings with severity, category, and fix suggestions.">
+  <title>AI Code Review Comment Generator</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <!-- Loading Overlay -->
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner-container">
+      <div class="spinner"></div>
+      <div class="spinner-text">Analyzing your code diff...</div>
+    </div>
+  </div>
+
+  <main class="app-shell">
+    <header class="topbar">
+      <div>
+        <h1>AI Code Review</h1>
+        <div class="topbar-subtitle">Paste a diff and get structured review findings with severity and fix suggestions.</div>
+      </div>
+      <span class="model-pill">{{ model }}</span>
+    </header>
+
+    <!-- Metrics bar -->
+    <div class="panel" style="margin-bottom:18px">
+      <div class="metrics-bar">
+        <div class="metric-card">
+          <span>Total Reviews</span>
+          <strong>{{ metrics.runs }}</strong>
+        </div>
+        <div class="metric-card">
+          <span>Feedback</span>
+          <strong>{{ metrics.feedback }}</strong>
+        </div>
+        <div class="metric-card">
+          <span>Avg Rating</span>
+          <strong>{{ metrics.average_rating }}/5</strong>
+        </div>
+      </div>
+    </div>
+
+    <section class="workspace">
+      <form class="panel editor-panel" method="post" id="reviewForm">
+        <div class="panel-header">
+          <h2>Code Diff</h2>
+          <button type="submit" id="analyzeBtn">⚡ Analyze Diff</button>
+        </div>
+        <textarea name="diff_text" spellcheck="false" placeholder="Paste your code diff here...">{{ diff_text }}</textarea>
+      </form>
+
+      <section class="panel output-panel">
+        <div class="panel-header">
+          <h2>Review Output</h2>
+          {% if review %}
+            <button class="copy-btn" id="copyBtn" type="button" onclick="copyOutput()">📋 Copy</button>
+          {% endif %}
+        </div>
+        {% if error %}
+          <pre class="error">{{ error }}</pre>
+        {% elif review %}
+          <pre id="reviewOutput">{{ review }}</pre>
+          <!-- Feedback Form -->
+          <form class="feedback-form" method="post" action="{{ url_for('main.feedback_form') }}">
+            <input type="hidden" name="run_id" value="{{ run_id }}">
+            <label>
+              Rating
+              <select name="rating">
+                <option value="5">5 — Excellent</option>
+                <option value="4">4 — Good</option>
+                <option value="3">3 — Okay</option>
+                <option value="2">2 — Weak</option>
+                <option value="1">1 — Poor</option>
+              </select>
+            </label>
+            <label>
+              Feedback
+              <input name="comment" maxlength="1000" placeholder="What should the model improve?">
+            </label>
+            <button type="submit">Save Feedback</button>
+          </form>
+        {% else %}
+          <div class="empty-state">
+            <div class="icon">🔍</div>
+            <strong>Ready for review</strong>
+            <span>Paste a code diff and click Analyze to get structured findings.</span>
+          </div>
+        {% endif %}
+      </section>
+    </section>
+
+    <!-- History Panel -->
+    <section class="panel history-panel">
+      <div class="panel-header">
+        <h2>Recent Reviews</h2>
+      </div>
+      <div class="history-list">
+        {% for item in history %}
+          <div class="history-item">
+            <div>
+              <strong>{{ item.source | upper }} review</strong>
+              <span>{{ item.model_name }} · {{ item.created_at[:19].replace("T", " ") }}</span>
+            </div>
+            <a href="{{ url_for('main.export_run', run_id=item.id) }}">Export</a>
+          </div>
+        {% else %}
+          <div class="empty-state" style="min-height:100px">
+            <strong>No reviews yet</strong>
+            <span>Completed reviews will appear here.</span>
+          </div>
+        {% endfor %}
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // Loading spinner
+    document.getElementById('reviewForm').addEventListener('submit', function() {
+      document.getElementById('loadingOverlay').classList.add('active');
+    });
+
+    // Copy to clipboard
+    function copyOutput() {
+      const text = document.getElementById('reviewOutput').innerText;
+      navigator.clipboard.writeText(text).then(function() {
+        const btn = document.getElementById('copyBtn');
+        btn.textContent = '✅ Copied!';
+        setTimeout(function() { btn.textContent = '📋 Copy'; }, 2000);
+      });
+    }
+  </script>
+</body>
+</html>

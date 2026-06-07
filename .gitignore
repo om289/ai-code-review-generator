@@ -1,0 +1,11 @@
+.env
+__pycache__/
+*.pyc
+.venv/
+venv/
+instance/
+*.log
+storage/*.db
+storage/*.db-*
+storage/*.jsonl
+storage/*.txt
