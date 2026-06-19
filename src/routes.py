@@ -27,8 +27,8 @@ bp = Blueprint("main", __name__)
 
 
 def _sanitize_input(text: str) -> str:
-    """Strip HTML/script tags from user input."""
-    return re.sub(r"<[^>]+>", "", text)
+    """Pass text unchanged. Sanitizing diffs by stripping <...> destroys code (e.g. templates, comparisons)."""
+    return text
 
 
 def _request_id() -> str:
